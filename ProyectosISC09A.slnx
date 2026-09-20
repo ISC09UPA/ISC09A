@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+  </Folder>
+  <Project Path="EasyMemories/EasyMemories.csproj" />
+  <Project Path="ICloset/ICloset.csproj" />
+  <Project Path="KIAN/KIAN.csproj" />
+  <Project Path="RECETASMD/RECETASMD.csproj" />
+  <Project Path="REPORT-U/REPORT-U.csproj" />
+  <Project Path="SeTePerdioAlgo/SeTePerdioAlgo.csproj" />
+</Solution>
