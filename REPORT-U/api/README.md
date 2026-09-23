@@ -75,7 +75,7 @@ Reglas puestas en código (no renegociar por integrante):
 | `Jwt__Issuer` / `Jwt__Audience` | `ReportU` | Claims `iss`/`aud` |
 | `Jwt__ExpiresMinutes` | `720` | Vida del accessToken |
 | `AzureBlob__ConnectionString` | `DefaultEndpointsProtocol=https;...` | **Vacía = carpeta local `./uploads`** (mismo contrato, ideal sin Azure) |
-| `AzureBlob__Container` | `reportu-media` | Se crea sola al arrancar si hay conexión |
+| `AzureBlob__Container` | `reportu-images` | Se crea sola al arrancar si hay conexión |
 
 ## Autenticación
 
