@@ -16,8 +16,7 @@ namespace ReportU.Controllers;
 public class PostsController(
     ReportUDbContext db,
     ICurrentUserService currentUser,
-    IBlobStorageService blobs,
-    ILogger<PostsController> logger) : ControllerBase
+    IPostImageService images) : ControllerBase
 {
     /// <summary>Feed principal con las publicaciones de todos los estudiantes.</summary>
     /// <param name="sort">`recent` = Recientes (createdAt DESC) · `popular` = Populares (supportCount DESC).</param>
@@ -166,7 +165,7 @@ public class PostsController(
         return await GetById(id);
     }
 
-    /// <summary>Elimina una publicación propia junto con sus imágenes (también del Blob Storage), comentarios, apoyos y guardados.</summary>
+    /// <summary>Elimina una publicación propia junto con sus imágenes (metadatos por cascada y blobs vía <c>IPostImageService</c>), comentarios, apoyos y guardados.</summary>
     /// <param name="id">Id de la publicación.</param>
     /// <response code="204">Publicación eliminada.</response>
     /// <response code="401">Falta el token o es inválido.</response>
@@ -187,11 +186,9 @@ public class PostsController(
         db.Posts.Remove(post);
         await db.SaveChangesAsync();
 
-        foreach (var blob in blobNames)
-        {
-            try { await blobs.DeleteAsync(blob); }
-            catch (Exception ex) { logger.LogWarning(ex, "No se pudo borrar el blob {Blob} del post {PostId}.", blob, id); }
-        }
+        // Los metadatos (PostImage) se borraron por cascada; el servicio
+        // limpia los blobs huérfanos sin bloquear la respuesta.
+        await images.PurgePostBlobsAsync(id, blobNames);
         return NoContent();
     }
 

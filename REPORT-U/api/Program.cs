@@ -54,6 +54,7 @@ builder.Services.AddDbContext<ReportUDbContext>(o =>
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<IPostImageService, PostImageService>();
 
 var blobConnectionString = builder.Configuration["AzureBlob:ConnectionString"];
 if (!string.IsNullOrWhiteSpace(blobConnectionString))

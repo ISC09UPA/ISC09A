@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ReportU.Services;
 
 namespace ReportU.Middleware;
 
@@ -15,6 +16,11 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
         try
         {
             await next(context);
+        }
+        catch (PostImageException ex)
+        {
+            logger.LogWarning("Error de imágenes {Code}: {Detail}", ex.Code, ex.Message);
+            await WriteProblemAsync(context, ex.Status, ex.Code, ex.Title, ex.Message);
         }
         catch (FileNotFoundException ex)
         {
@@ -38,12 +44,7 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
         var problem = new ProblemDetails
         {
             Status = status,
-            Title = status switch
-            {
-                400 => "Solicitud inválida",
-                404 => "No encontrado",
-                _ => "Error interno",
-            },
+            Title = TitleFor(status),
             Detail = detail,
         };
         problem.Extensions["code"] = code;
@@ -52,6 +53,28 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
         context.Response.ContentType = "application/problem+json";
         return context.Response.WriteAsJsonAsync(problem);
     }
+
+    private static Task WriteProblemAsync(HttpContext context, int status, string code, string title, string detail)
+    {
+        var problem = new ProblemDetails
+        {
+            Status = status,
+            Title = title,
+            Detail = detail,
+        };
+        problem.Extensions["code"] = code;
+        problem.Extensions["traceId"] = context.TraceIdentifier;
+        context.Response.StatusCode = status;
+        context.Response.ContentType = "application/problem+json";
+        return context.Response.WriteAsJsonAsync(problem);
+    }
+
+    private static string TitleFor(int status) => status switch
+    {
+        400 => "Solicitud inválida",
+        404 => "No encontrado",
+        _ => "Error interno",
+    };
 }
 
 /// <summary>Códigos de error propios (extensión `code` del ProblemDetails) para que la app móvil los maneje sin parsear mensajes.</summary>

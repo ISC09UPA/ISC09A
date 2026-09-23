@@ -54,7 +54,7 @@ Controllers/   → C: Auth, Users, Posts, Comments, Supports, Me, Media
 Models/        → M: User, Post, PostImage, Comment, PostSupport, Bookmark + Enums
 Dtos/          →    contratos request/response (la "vista" que ve la app móvil)
 Data/          →    ReportUDbContext + factoría de tiempo de diseño
-Services/      →    JWT, BCrypt, usuario actual, Blob Storage, identidad pública
+Services/      →    JWT, BCrypt, usuario actual, Blob Storage, PostImageService (imágenes), identidad pública
 Middleware/    →    errores RFC 7807 + códigos propios
 Configuration/ →    JwtOptions, BlobOptions (todo por variables de entorno)
 ```
