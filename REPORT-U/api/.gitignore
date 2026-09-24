@@ -1,0 +1,15 @@
+# Entorno local (secretos de desarrollo)
+.env
+
+# Build / NuGet
+bin/
+obj/
+out/
+publish/
+*.user
+
+# Imágenes en almacenamiento local de desarrollo
+uploads/
+
+# Podman / Compose
+*.log
