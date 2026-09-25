@@ -1,103 +1,141 @@
-import React from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { useState } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+
+import { colors } from './theme';
+import LoginScreen from './screens/LoginScreen';
+import RegistroScreen from './screens/RegistroScreen';
 import InicioScreen from './screens/InicioScreen';
 import DetalleScreen from './screens/DetalleScreen';
 import FormularioScreen from './screens/FormularioScreen';
+import EditarScreen from './screens/EditarScreen';
+import MisPublicacionesScreen from './screens/MisPublicacionesScreen';
+import GuardadosScreen from './screens/GuardadosScreen';
 import PerfilScreen from './screens/PerfilScreen';
+import VisorImagenScreen from './screens/VisorImagenScreen';
 
-
-// const Stack = createNativeStackNavigator();
+const AuthStack = createNativeStackNavigator();
+const RootStack = createNativeStackNavigator();
+const InicioStack = createNativeStackNavigator();
+const GuardadosStack = createNativeStackNavigator();
+const PerfilStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-export default function App() {
+const noHeader = { headerShown: false };
+
+// Cada pestaña tiene su propio stack para que la barra inferior
+// permanezca visible en pantallas secundarias (como en el mockup)
+function InicioStackNav() {
   return (
-    <NavigationContainer>
-      <Tab.Navigator 
-        screenOptions={({ route }) => ({
-          tabBarIcon: ({ focused, color, size }) => {
-            let iconName;
-
-            if (route.name === 'Inicio') {
-              iconName = focused ? 'home' : 'home-outline';
-            } else if (route.name === 'Detalle') {
-              iconName = focused ? 'list' : 'list-outline';
-            } else if (route.name === 'Formulario') {
-              iconName = focused ? 'create' : 'create-outline';
-            } else if (route.name === 'Perfil') {
-              iconName = focused ? 'person' : 'person-outline';
-            }
-
-            // You can return any component that you like here!
-            return <Ionicons name={iconName} size={size} color={color} />;
-          },
-          tabBarActiveTintColor: 'blue',
-          tabBarInactiveTintColor: 'gray',
-        })}
-      >
-        <Tab.Screen name="Inicio" component={InicioScreen} />
-        <Tab.Screen name="Detalle" component={DetalleScreen} />
-        <Tab.Screen name="Formulario" component={FormularioScreen} />
-        <Tab.Screen name="Perfil" component={PerfilScreen} />
-      </Tab.Navigator>
-    </NavigationContainer>
+    <InicioStack.Navigator screenOptions={noHeader}>
+      <InicioStack.Screen name="Inicio" component={InicioScreen} />
+      <InicioStack.Screen name="Detalle" component={DetalleScreen} />
+    </InicioStack.Navigator>
   );
 }
 
+function GuardadosStackNav() {
+  return (
+    <GuardadosStack.Navigator screenOptions={noHeader}>
+      <GuardadosStack.Screen name="Guardados" component={GuardadosScreen} />
+      <GuardadosStack.Screen name="Detalle" component={DetalleScreen} />
+    </GuardadosStack.Navigator>
+  );
+}
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#e9f1f7', 
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center', 
-    paddingHorizontal: 30,
-    paddingVertical: 80, 
-  },
-  name: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#2d2220', 
-    marginBottom: 5,
-    textAlign: 'center'
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 40, 
-    textAlign: 'center'
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2d2220',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#c0cad5', 
-    backgroundColor: '#dce5f0', 
-    borderRadius: 8, 
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    marginBottom: 20, 
-  },
-  button: {
-    backgroundColor: '#008ce6', 
-    paddingVertical: 15,
-    borderRadius: 5, 
-    alignItems: 'center', 
-    marginTop: 10,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  }
-});
+function PerfilStackNav({ onLogout }) {
+  return (
+    <PerfilStack.Navigator screenOptions={noHeader}>
+      <PerfilStack.Screen
+        name="Perfil"
+        component={(props) => <PerfilScreen {...props} onLogout={onLogout} />}
+      />
+      <PerfilStack.Screen name="MisPublicaciones" component={MisPublicacionesScreen} />
+      <PerfilStack.Screen name="Editar" component={EditarScreen} />
+    </PerfilStack.Navigator>
+  );
+}
+
+function MainTabs({ onLogout }) {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.gray400,
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.gray200 },
+        tabBarIcon: ({ focused, color, size }) => {
+          const icons = {
+            Inicio: focused ? 'home' : 'home-outline',
+            Crear: focused ? 'create' : 'create-outline',
+            Guardados: focused ? 'bookmark' : 'bookmark-outline',
+            Perfil: focused ? 'person' : 'person-outline',
+          };
+          return <Ionicons name={icons[route.name]} size={size} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="Inicio" component={InicioStackNav} />
+      <Tab.Screen name="Crear" component={FormularioScreen} />
+      <Tab.Screen name="Guardados" component={GuardadosStackNav} />
+      <Tab.Screen
+        name="Perfil"
+        component={(props) => <PerfilStackNav {...props} onLogout={onLogout} />}
+      />
+    </Tab.Navigator>
+  );
+}
+
+function MainNavigator({ onLogout }) {
+  return (
+    <RootStack.Navigator screenOptions={noHeader}>
+      <RootStack.Screen
+        name="Main"
+        component={(props) => <MainTabs {...props} onLogout={onLogout} />}
+      />
+      <RootStack.Screen
+        name="VisorImagen"
+        component={VisorImagenScreen}
+        options={{ presentation: 'fullScreenModal', animation: 'fade' }}
+      />
+    </RootStack.Navigator>
+  );
+}
+
+// Login y Registro se muestran sin la barra inferior (authScreens del mockup)
+function AuthNavigator({ onLogin }) {
+  return (
+    <AuthStack.Navigator screenOptions={noHeader}>
+      <AuthStack.Screen
+        name="Login"
+        component={(props) => <LoginScreen {...props} onLogin={onLogin} />}
+      />
+      <AuthStack.Screen
+        name="Registro"
+        component={(props) => <RegistroScreen {...props} onLogin={onLogin} />}
+      />
+    </AuthStack.Navigator>
+  );
+}
+
+export default function App() {
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  return (
+    <SafeAreaProvider>
+      <StatusBar style="light" />
+      <NavigationContainer>
+        {loggedIn ? (
+          <MainNavigator onLogout={() => setLoggedIn(false)} />
+        ) : (
+          <AuthNavigator onLogin={() => setLoggedIn(true)} />
+        )}
+      </NavigationContainer>
+    </SafeAreaProvider>
+  );
+}
