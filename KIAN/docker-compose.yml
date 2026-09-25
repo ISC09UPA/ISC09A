@@ -1,0 +1,60 @@
+# Local development environment: SQL Server + Azurite (Blob Storage emulator) + API.
+#
+#   cp .env.example .env        # then set MSSQL_SA_PASSWORD
+#   docker compose up -d --build
+#
+# API:      http://localhost:5080/swagger
+# Health:   http://localhost:5080/health
+# Not intended for production. Production uses Azure App Service, Azure SQL and Azure Blob Storage.
+
+name: imagecards
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env}
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    command: azurite-blob --blobHost 0.0.0.0 --blobPort 10000 --location /data
+    ports:
+      - "10000:10000"
+    volumes:
+      - azurite-data:/data
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      azurite:
+        condition: service_started
+    ports:
+      - "5080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Database__ApplyMigrationsOnStartup: "true"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=ImageCards;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=true"
+      # The blob endpoint host is also the host of the SAS image URLs returned to clients,
+      # so it must be reachable from both the API container and the phone/emulator (see docs/development.md).
+      AzureStorage__ConnectionString: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=${AZURITE_ACCOUNT_KEY:?Set AZURITE_ACCOUNT_KEY in .env};BlobEndpoint=http://${BLOB_PUBLIC_HOST:-host.docker.internal}:10000/devstoreaccount1;"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  sqlserver-data:
+  azurite-data:
