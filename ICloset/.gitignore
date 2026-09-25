@@ -1,0 +1,19 @@
+# Material de referencia (no versionar)
+proyectoWEY/
+
+# Expo / React Native
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.metro-health-check*
+*.tsbuildinfo
+
+# .NET (aplica a builds nuevos; los ya trackeados no se tocan)
+bin/
+obj/
+*.user
+
+# macOS
+.DS_Store
