@@ -1,5 +1,6 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Azure.Storage.Sas;
 using Microsoft.Extensions.Options;
 using ReportU.Configuration;
 
@@ -14,6 +15,13 @@ public interface IBlobStorageService
 {
     bool IsCloud { get; }
     Task UploadAsync(string blobName, Stream content, string contentType, CancellationToken ct = default);
+
+    /// <summary>Lista los nombres de blobs cuyo nombre comienza con <paramref name="prefix"/>. Vacío = todos.</summary>
+    Task<IReadOnlyList<string>> ListAsync(string? prefix = null, CancellationToken ct = default);
+
+    /// <summary>Genera una URL de solo lectura para el blob. En Azure devuelve un SAS token temporal; en local devuelve la ruta relativa.</summary>
+    Task<string> GetReadUrlAsync(string blobName, TimeSpan? expiry = null, CancellationToken ct = default);
+
     Task<(Stream Content, string ContentType, long Length)> OpenReadAsync(string blobName, CancellationToken ct = default);
     Task DeleteAsync(string blobName, CancellationToken ct = default);
 }
@@ -39,6 +47,39 @@ public class AzureBlobStorageService : IBlobStorageService
     {
         var blob = _container.GetBlobClient(blobName);
         await blob.UploadAsync(content, new BlobHttpHeaders { ContentType = contentType }, cancellationToken: ct);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<string>> ListAsync(string? prefix = null, CancellationToken ct = default)
+    {
+        var names = new List<string>();
+        await foreach (var item in _container.GetBlobsAsync(prefix: prefix, cancellationToken: ct))
+        {
+            names.Add(item.Name);
+        }
+        return names;
+    }
+
+    /// <inheritdoc />
+    public Task<string> GetReadUrlAsync(string blobName, TimeSpan? expiry = null, CancellationToken ct = default)
+    {
+        var blob = _container.GetBlobClient(blobName);
+
+        if (!blob.CanGenerateSasUri)
+            throw new InvalidOperationException(
+                "El BlobClient no puede generar SAS URIs. Verifica que la ConnectionString incluya la account key.");
+
+        var sasBuilder = new BlobSasBuilder
+        {
+            BlobContainerName = _container.Name,
+            BlobName = blobName,
+            Resource = "b", // b = blob
+            ExpiresOn = DateTimeOffset.UtcNow.Add(expiry ?? TimeSpan.FromHours(1)),
+        };
+        sasBuilder.SetPermissions(BlobSasPermissions.Read);
+
+        var sasUri = blob.GenerateSasUri(sasBuilder);
+        return Task.FromResult(sasUri.AbsoluteUri);
     }
 
     public async Task<(Stream Content, string ContentType, long Length)> OpenReadAsync(string blobName, CancellationToken ct = default)
@@ -90,6 +131,33 @@ public class LocalFileStorageService : IBlobStorageService
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         await using var fs = File.Create(path);
         await content.CopyToAsync(fs, ct);
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<string>> ListAsync(string? prefix = null, CancellationToken ct = default)
+    {
+        if (!Directory.Exists(_root))
+            return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+
+        var files = Directory.GetFiles(_root, "*.*", SearchOption.AllDirectories)
+            .Select(f => Path.GetRelativePath(_root, f).Replace(Path.DirectorySeparatorChar, '/'))
+            .Where(name => string.IsNullOrEmpty(prefix) || name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            .Order()
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<string>>(files);
+    }
+
+    /// <inheritdoc />
+    public Task<string> GetReadUrlAsync(string blobName, TimeSpan? expiry = null, CancellationToken ct = default)
+    {
+        var path = PathFor(blobName);
+        if (!File.Exists(path))
+            throw new FileNotFoundException($"Blob '{blobName}' no encontrado.");
+
+        // En desarrollo local devolvemos la ruta relativa al storage.
+        var relativePath = Path.GetRelativePath(_root, path).Replace(Path.DirectorySeparatorChar, '/');
+        return Task.FromResult($"/uploads/{relativePath}");
     }
 
     public Task<(Stream Content, string ContentType, long Length)> OpenReadAsync(string blobName, CancellationToken ct = default)
