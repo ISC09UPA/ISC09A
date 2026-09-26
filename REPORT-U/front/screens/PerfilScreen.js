@@ -1,14 +1,70 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Switch, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, Switch, Alert, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, shadow } from '../theme';
 import AppHeader from '../components/AppHeader';
 import Dropdown from '../components/Dropdown';
+import { useAuth } from '../src/AuthContext';
+import { displayNameLabel, displayNameValue } from '../src/labels';
 
 // Pantalla de Perfil (mockup #screen-profile)
+// GET /api/users/me al montar; PATCH al cambiar privacidad. Email nunca es público.
 export default function PerfilScreen({ navigation, onLogout }) {
-  const [displayName, setDisplayName] = useState('Nombre real');
-  const [showEnrollment, setShowEnrollment] = useState(false);
+  const { user, updateProfile, logout } = useAuth();
+  const [savingPref, setSavingPref] = useState(false);
+
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <AppHeader title="Perfil" />
+      </View>
+    );
+  }
+
+  const initials = (user.fullName || user.username || '?')
+    .split(' ')
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+  const changePreference = async (label) => {
+    const value = displayNameValue(label);
+    setSavingPref(true);
+    try {
+      await updateProfile({ displayNamePreference: value });
+    } catch (e) {
+      Alert.alert('No se pudo guardar la preferencia', e.message);
+    } finally {
+      setSavingPref(false);
+    }
+  };
+
+  const toggleEnrollment = async (show) => {
+    setSavingPref(true);
+    try {
+      await updateProfile({ showEnrollmentNumber: show });
+    } catch (e) {
+      Alert.alert('No se pudo guardar', e.message);
+    } finally {
+      setSavingPref(false);
+    }
+  };
+
+  const handleLogout = () => {
+    Alert.alert('Cerrar sesión', '¿Seguro que quieres salir?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Salir',
+        style: 'destructive',
+        onPress: async () => {
+          await logout();
+          onLogout?.();
+        },
+      },
+    ]);
+  };
 
   return (
     <View style={styles.container}>
@@ -17,13 +73,13 @@ export default function PerfilScreen({ navigation, onLogout }) {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.avatarWrap}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>JP</Text>
+            <Text style={styles.avatarText}>{initials || '?'}</Text>
           </View>
         </View>
 
-        <Text style={styles.name}>Juan Pérez López</Text>
-        <Text style={styles.username}>@juanperez</Text>
-        <Text style={styles.career}>Ingeniería en Sistemas Computacionales</Text>
+        <Text style={styles.name}>{user.fullName}</Text>
+        <Text style={styles.username}>@{user.username}</Text>
+        <Text style={styles.career}>{user.career}</Text>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Privacidad</Text>
@@ -31,16 +87,17 @@ export default function PerfilScreen({ navigation, onLogout }) {
             <Text style={styles.optionLabel}>Mostrar como</Text>
             <Dropdown
               compact
-              options={['Nombre real', 'Username', 'Anónimo']}
-              value={displayName}
-              onChange={setDisplayName}
+              options={DISPLAY_OPTIONS}
+              value={displayNameLabel(user.displayNamePreference)}
+              onChange={changePreference}
             />
           </View>
           <View style={[styles.option, styles.optionLast]}>
             <Text style={styles.optionLabel}>Mostrar matrícula</Text>
             <Switch
-              value={showEnrollment}
-              onValueChange={setShowEnrollment}
+              value={user.showEnrollmentNumber}
+              onValueChange={toggleEnrollment}
+              disabled={savingPref}
               trackColor={{ false: colors.gray300, true: colors.primary }}
             />
           </View>
@@ -63,25 +120,28 @@ export default function PerfilScreen({ navigation, onLogout }) {
             <Ionicons name="chevron-forward" size={20} color={colors.gray400} />
           </Pressable>
 
-          <View style={styles.menuItem}>
+          <View style={[styles.menuItem, styles.menuItemLast]}>
             <View style={styles.menuLeft}>
-              <Ionicons name="settings-outline" size={18} color={colors.gray700} />
-              <Text style={styles.menuText}>Configuración</Text>
+              <Ionicons name="mail-outline" size={18} color={colors.gray700} />
+              <Text style={styles.menuText}>{user.email}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.gray400} />
           </View>
-
-          <Pressable style={[styles.menuItem, styles.menuItemLast]} onPress={onLogout}>
-            <View style={styles.menuLeft}>
-              <Ionicons name="log-out-outline" size={18} color={colors.danger} />
-              <Text style={[styles.menuText, styles.logoutText]}>Cerrar sesión</Text>
-            </View>
-          </Pressable>
         </View>
+
+        <Text style={styles.disclaimer}>
+          Tu email nunca se muestra públicamente en la app.
+        </Text>
+
+        <Pressable style={[styles.logoutBtn]} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={18} color={colors.danger} />
+          <Text style={styles.logoutText}>Cerrar sesión</Text>
+        </Pressable>
       </ScrollView>
     </View>
   );
 }
+
+const DISPLAY_OPTIONS = ['Nombre real', 'Username', 'Anónimo'];
 
 const styles = StyleSheet.create({
   container: {
@@ -178,12 +238,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    flexShrink: 1,
   },
   menuText: {
     fontSize: 15,
     color: colors.gray800,
+    flexShrink: 1,
+  },
+  disclaimer: {
+    fontSize: 12,
+    color: colors.gray400,
+    textAlign: 'center',
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    paddingVertical: 14,
+    ...shadow,
   },
   logoutText: {
     color: colors.danger,
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

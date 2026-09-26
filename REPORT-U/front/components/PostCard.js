@@ -2,10 +2,13 @@ import { Pressable, View, Text, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, shadow } from '../theme';
 import { TypeBadge, CategoryChip } from './PostBadges';
-import { thumbUrl } from '../data/posts';
+import { imageUrl } from '../src/api';
 
-// .post-card del mockup
+// .post-card del mockup, alimentado por PostSummaryResponse (ver src/format.js)
 export default function PostCard({ post, onPress, showAuthor = true, showComments = false }) {
+  const excerpt = post.excerpt || post.description || '';
+  const thumbs = (post.images || []).slice(0, 4);
+
   return (
     <Pressable style={({ pressed }) => [styles.card, pressed && styles.pressed]} onPress={onPress}>
       <View style={styles.header}>
@@ -14,14 +17,16 @@ export default function PostCard({ post, onPress, showAuthor = true, showComment
       </View>
 
       <Text style={styles.title}>{post.title}</Text>
-      <Text style={styles.excerpt} numberOfLines={2}>
-        {post.excerpt}
-      </Text>
+      {excerpt ? (
+        <Text style={styles.excerpt} numberOfLines={2}>
+          {excerpt}
+        </Text>
+      ) : null}
 
-      {post.images && post.images.length > 0 ? (
+      {thumbs.length > 0 ? (
         <View style={styles.imagesPreview}>
-          {post.images.map((seed) => (
-            <Image key={seed} source={{ uri: thumbUrl(seed) }} style={styles.thumb} />
+          {thumbs.map((image) => (
+            <Image key={image.id} source={{ uri: imageUrl(image) }} style={styles.thumb} />
           ))}
         </View>
       ) : null}
@@ -45,9 +50,7 @@ export default function PostCard({ post, onPress, showAuthor = true, showComment
           {showComments ? (
             <View style={styles.metaItem}>
               <Ionicons name="chatbubble-outline" size={12} color={colors.gray500} />
-              <Text style={styles.supports}>
-                {post.commentCount != null ? post.commentCount : post.comments.length}
-              </Text>
+              <Text style={styles.supports}>{post.commentCount ?? 0}</Text>
             </View>
           ) : null}
         </View>

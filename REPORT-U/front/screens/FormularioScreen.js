@@ -1,21 +1,111 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Image, Alert, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  TextInput,
+  Image,
+  Alert,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
 import AppHeader from '../components/AppHeader';
 import RadioGroup from '../components/RadioGroup';
 import Dropdown from '../components/Dropdown';
-import { categories, TYPE_OPTIONS, IDENTITY_OPTIONS, thumbUrl } from '../data/posts';
+import { api } from '../src/api';
+import { TYPE_OPTIONS, IDENTITY_OPTIONS, MAX_IMAGES, CATEGORIES } from '../src/constants';
+import { categoryLabel, categoryValue } from '../src/labels';
+import { pickFromGallery, takeFromCamera } from '../src/imagePicker';
 
 // Pantalla de nueva publicación (mockup #screen-create)
+// POST /api/posts y luego POST /api/posts/{id}/images por cada imagen.
 export default function FormularioScreen({ navigation }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [type, setType] = useState('incidencia');
-  const [category, setCategory] = useState('');
+  const [type, setType] = useState('Incidencia');
+  const [category, setCategory] = useState(''); // valor del enum (p. ej. "Infraestructura")
   const [location, setLocation] = useState('');
-  const [images, setImages] = useState(['upload1']);
-  const [identity, setIdentity] = useState('real');
+  const [images, setImages] = useState([]); // [{ uri }]
+  const [identity, setIdentity] = useState('Default');
+  const [submitting, setSubmitting] = useState(false);
+
+  const addImages = (uris) => {
+    setImages((prev) => {
+      const room = MAX_IMAGES - prev.length;
+      if (uris.length > room) {
+        Alert.alert(
+          'Límite de imágenes',
+          `Solo puedes agregar ${MAX_IMAGES} imágenes por publicación.`
+        );
+      }
+      return [...prev, ...uris.slice(0, Math.max(0, room)).map((uri) => ({ uri }))];
+    });
+  };
+
+  const openCamera = async () => {
+    const uri = await takeFromCamera();
+    if (uri) addImages([uri]);
+  };
+
+  const openGallery = async () => {
+    const room = MAX_IMAGES - images.length;
+    const uris = await pickFromGallery(Math.max(1, room));
+    if (uris?.length) addImages(uris);
+  };
+
+  const handleSubmit = async () => {
+    if (!title.trim() || !description.trim() || !category) {
+      Alert.alert('Faltan datos', 'Escribe título, descripción y selecciona una categoría.');
+      return;
+    }
+    setSubmitting(true);
+    let created = null;
+    try {
+      created = await api.createPost({
+        title: title.trim(),
+        description: description.trim(),
+        type,
+        category,
+        location: location.trim() || null,
+        identityMode: identity,
+      });
+    } catch (e) {
+      Alert.alert('No se pudo publicar', e.message);
+      setSubmitting(false);
+      return;
+    }
+
+    // Sube las imágenes una por una; un fallo no cancela lo ya publicado
+    const failed = [];
+    for (const img of images) {
+      try {
+        await api.uploadImage(created.id, img.uri);
+      } catch (e) {
+        failed.push(e.message);
+      }
+    }
+    setSubmitting(false);
+
+    // Limpia el formulario para la próxima publicación
+    setTitle('');
+    setDescription('');
+    setType('Incidencia');
+    setCategory('');
+    setLocation('');
+    setImages([]);
+    setIdentity('Default');
+
+    if (failed.length > 0) {
+      Alert.alert(
+        'Publicación creada',
+        `Pero ${failed.length} imagen(es) no se subieron:\n${failed.join('\n')}`
+      );
+    }
+    navigation.navigate('Inicio');
+  };
 
   return (
     <View style={styles.container}>
@@ -28,6 +118,7 @@ export default function FormularioScreen({ navigation }) {
             style={styles.input}
             placeholder="Ej: Fuga de agua en edificio B"
             placeholderTextColor={colors.gray400}
+            maxLength={150}
             value={title}
             onChangeText={setTitle}
           />
@@ -40,6 +131,7 @@ export default function FormularioScreen({ navigation }) {
             placeholder="Describe tu incidencia, queja o discusión..."
             placeholderTextColor={colors.gray400}
             multiline
+            maxLength={5000}
             value={description}
             onChangeText={setDescription}
           />
@@ -53,32 +145,41 @@ export default function FormularioScreen({ navigation }) {
         <View style={styles.group}>
           <Text style={styles.label}>Categoría</Text>
           <Dropdown
-            options={categories}
-            value={category}
+            options={CATEGORIES.map((c) => c.label)}
+            value={category ? categoryLabel(category) : ''}
             placeholder="Selecciona una categoría"
-            onChange={setCategory}
+            onChange={(label) => setCategory(categoryValue(label))}
           />
         </View>
 
         <View style={styles.group}>
-          <Text style={styles.label}>Ubicación</Text>
+          <Text style={styles.label}>Ubicación (opcional)</Text>
           <TextInput
             style={styles.input}
             placeholder="Ej: Edificio B, segundo piso"
             placeholderTextColor={colors.gray400}
+            maxLength={200}
             value={location}
             onChangeText={setLocation}
           />
         </View>
 
         <View style={styles.group}>
-          <Text style={styles.label}>Imágenes (0–4)</Text>
+          <Text style={styles.label}>Imágenes ({images.length}/{MAX_IMAGES})</Text>
           <View style={styles.uploadRow}>
-            <Pressable style={styles.upload} onPress={() => Alert.alert('📷 Abrir cámara o galería')}>
+            <Pressable
+              style={styles.upload}
+              onPress={openCamera}
+              disabled={images.length >= MAX_IMAGES}
+            >
               <Ionicons name="camera" size={24} color={colors.gray500} />
               <Text style={styles.uploadText}>Tomar foto</Text>
             </Pressable>
-            <Pressable style={styles.upload} onPress={() => Alert.alert('🖼️ Abrir galería')}>
+            <Pressable
+              style={styles.upload}
+              onPress={openGallery}
+              disabled={images.length >= MAX_IMAGES}
+            >
               <Ionicons name="images" size={24} color={colors.gray500} />
               <Text style={styles.uploadText}>Galería</Text>
             </Pressable>
@@ -86,9 +187,9 @@ export default function FormularioScreen({ navigation }) {
 
           {images.length > 0 ? (
             <View style={styles.previewRow}>
-              {images.map((seed, index) => (
-                <View key={`${seed}-${index}`} style={styles.previewItem}>
-                  <Image source={{ uri: thumbUrl(seed) }} style={styles.previewImage} />
+              {images.map((img, index) => (
+                <View key={`${img.uri}-${index}`} style={styles.previewItem}>
+                  <Image source={{ uri: img.uri }} style={styles.previewImage} />
                   <Pressable
                     style={styles.removeBtn}
                     onPress={() => setImages((imgs) => imgs.filter((_, i) => i !== index))}
@@ -106,8 +207,16 @@ export default function FormularioScreen({ navigation }) {
           <RadioGroup options={IDENTITY_OPTIONS} value={identity} onChange={setIdentity} />
         </View>
 
-        <Pressable style={styles.button} onPress={() => navigation.navigate('Inicio')}>
-          <Text style={styles.buttonText}>Publicar</Text>
+        <Pressable
+          style={[styles.button, submitting && styles.buttonDisabled]}
+          onPress={handleSubmit}
+          disabled={submitting}
+        >
+          {submitting ? (
+            <ActivityIndicator color={colors.white} />
+          ) : (
+            <Text style={styles.buttonText}>Publicar</Text>
+          )}
         </Pressable>
       </ScrollView>
     </View>
@@ -200,6 +309,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 4,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
     color: colors.white,

@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -7,6 +7,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
 import { colors } from './theme';
+import { AuthProvider, useAuth } from './src/AuthContext';
 import LoginScreen from './screens/LoginScreen';
 import RegistroScreen from './screens/RegistroScreen';
 import InicioScreen from './screens/InicioScreen';
@@ -32,7 +33,8 @@ const noHeader = { headerShown: false };
 function InicioStackNav() {
   return (
     <InicioStack.Navigator screenOptions={noHeader}>
-      <InicioStack.Screen name="Inicio" component={InicioScreen} />
+      {/* "InicioHome" evita duplicar el nombre con la pestaña "Inicio" (warning de navegación) */}
+      <InicioStack.Screen name="InicioHome" component={InicioScreen} />
       <InicioStack.Screen name="Detalle" component={DetalleScreen} />
     </InicioStack.Navigator>
   );
@@ -41,26 +43,25 @@ function InicioStackNav() {
 function GuardadosStackNav() {
   return (
     <GuardadosStack.Navigator screenOptions={noHeader}>
-      <GuardadosStack.Screen name="Guardados" component={GuardadosScreen} />
+      {/* "GuardadosHome" evita duplicar el nombre con la pestaña "Guardados" */}
+      <GuardadosStack.Screen name="GuardadosHome" component={GuardadosScreen} />
       <GuardadosStack.Screen name="Detalle" component={DetalleScreen} />
     </GuardadosStack.Navigator>
   );
 }
 
-function PerfilStackNav({ onLogout }) {
+function PerfilStackNav() {
   return (
     <PerfilStack.Navigator screenOptions={noHeader}>
-      <PerfilStack.Screen
-        name="Perfil"
-        component={(props) => <PerfilScreen {...props} onLogout={onLogout} />}
-      />
+      {/* "PerfilHome" evita duplicar el nombre con la pestaña "Perfil" */}
+      <PerfilStack.Screen name="PerfilHome" component={PerfilScreen} />
       <PerfilStack.Screen name="MisPublicaciones" component={MisPublicacionesScreen} />
       <PerfilStack.Screen name="Editar" component={EditarScreen} />
     </PerfilStack.Navigator>
   );
 }
 
-function MainTabs({ onLogout }) {
+function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -83,21 +84,15 @@ function MainTabs({ onLogout }) {
       <Tab.Screen name="Inicio" component={InicioStackNav} />
       <Tab.Screen name="Crear" component={FormularioScreen} />
       <Tab.Screen name="Guardados" component={GuardadosStackNav} />
-      <Tab.Screen
-        name="Perfil"
-        component={(props) => <PerfilStackNav {...props} onLogout={onLogout} />}
-      />
+      <Tab.Screen name="Perfil" component={PerfilStackNav} />
     </Tab.Navigator>
   );
 }
 
-function MainNavigator({ onLogout }) {
+function MainNavigator() {
   return (
     <RootStack.Navigator screenOptions={noHeader}>
-      <RootStack.Screen
-        name="Main"
-        component={(props) => <MainTabs {...props} onLogout={onLogout} />}
-      />
+      <RootStack.Screen name="Main" component={MainTabs} />
       <RootStack.Screen
         name="VisorImagen"
         component={VisorImagenScreen}
@@ -108,34 +103,39 @@ function MainNavigator({ onLogout }) {
 }
 
 // Login y Registro se muestran sin la barra inferior (authScreens del mockup)
-function AuthNavigator({ onLogin }) {
+function AuthNavigator() {
   return (
     <AuthStack.Navigator screenOptions={noHeader}>
-      <AuthStack.Screen
-        name="Login"
-        component={(props) => <LoginScreen {...props} onLogin={onLogin} />}
-      />
-      <AuthStack.Screen
-        name="Registro"
-        component={(props) => <RegistroScreen {...props} onLogin={onLogin} />}
-      />
+      <AuthStack.Screen name="Login" component={LoginScreen} />
+      <AuthStack.Screen name="Registro" component={RegistroScreen} />
     </AuthStack.Navigator>
   );
 }
 
-export default function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
+function Root() {
+  const { user, loading } = useAuth();
 
+  // Espera el auto-login (token persistido) antes de navegar
+  if (loading) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary }}>
+        <ActivityIndicator size="large" color={colors.white} />
+      </View>
+    );
+  }
+
+  return user ? <MainNavigator /> : <AuthNavigator />;
+}
+
+export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <NavigationContainer>
-        {loggedIn ? (
-          <MainNavigator onLogout={() => setLoggedIn(false)} />
-        ) : (
-          <AuthNavigator onLogin={() => setLoggedIn(true)} />
-        )}
-      </NavigationContainer>
+      <AuthProvider>
+        <NavigationContainer>
+          <Root />
+        </NavigationContainer>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

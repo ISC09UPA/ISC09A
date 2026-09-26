@@ -1,18 +1,54 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { useCallback, useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  RefreshControl,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme';
 import AppHeader from '../components/AppHeader';
 import PostCard from '../components/PostCard';
-import { posts } from '../data/posts';
+import { api } from '../src/api';
+import { mapPost } from '../src/format';
 
-// Pantalla de Feed (mockup #screen-feed)
+// Pantalla de Feed (mockup #screen-feed): GET /api/posts?sort=recent|popular
 export default function InicioScreen({ navigation }) {
   const [tab, setTab] = useState('recientes');
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
 
-  // "Populares" ordena por soportes DESC, igual que el mockup
-  const list =
-    tab === 'recientes' ? posts : [...posts].sort((a, b) => b.supports - a.supports);
+  const load = useCallback(
+    async (sort) => {
+      setError('');
+      try {
+        const data = await api.getFeed(sort === 'populares' ? 'popular' : 'recent', 1, 50);
+        setList(data.items.map(mapPost));
+      } catch (e) {
+        setError(`No se pudo cargar el feed: ${e.message}`);
+      }
+    },
+    []
+  );
+
+  // Carga al montar, al cambiar de pestaña y cada vez que la pantalla
+  // recupera el foco (p. ej. tras crear una publicación).
+  useFocusEffect(
+    useCallback(() => {
+      load(tab).finally(() => setLoading(false));
+    }, [tab, load])
+  );
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load(tab).finally(() => setRefreshing(false));
+  };
 
   return (
     <View style={styles.container}>
@@ -37,15 +73,39 @@ export default function InicioScreen({ navigation }) {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.list}>
-        {list.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            onPress={() => navigation.navigate('Detalle', { postId: post.id })}
-          />
-        ))}
-      </ScrollView>
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : error ? (
+        <View style={styles.center}>
+          <Ionicons name="cloud-offline-outline" size={40} color={colors.gray400} />
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable style={styles.retryBtn} onPress={() => load(tab)}>
+            <Text style={styles.retryText}>Reintentar</Text>
+          </Pressable>
+        </View>
+      ) : list.length === 0 ? (
+        <View style={styles.center}>
+          <Ionicons name="megaphone-outline" size={40} color={colors.gray400} />
+          <Text style={styles.emptyText}>Aún no hay publicaciones. ¡Crea la primera!</Text>
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+          }
+        >
+          {list.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              onPress={() => navigation.navigate('Detalle', { postId: post.id })}
+            />
+          ))}
+        </ScrollView>
+      )}
 
       <Pressable style={styles.fab} onPress={() => navigation.navigate('Crear')}>
         <Ionicons name="add" size={28} color={colors.white} />
@@ -86,6 +146,32 @@ const styles = StyleSheet.create({
   list: {
     padding: 12,
     paddingBottom: 24,
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    padding: 24,
+  },
+  errorText: {
+    color: colors.gray600,
+    textAlign: 'center',
+  },
+  retryBtn: {
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+  },
+  retryText: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  emptyText: {
+    color: colors.gray500,
+    textAlign: 'center',
   },
   fab: {
     position: 'absolute',

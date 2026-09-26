@@ -82,6 +82,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
         o.Events = new JwtBearerEvents
         {
+            OnMessageReceived = context =>
+            {
+                // La app móvil muestra imágenes con <Image>, que no permite enviar
+                // headers, así que el JWT llega por query (?access_token=...).
+                // Solo se acepta en los endpoints de media para limitar la exposición.
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    context.HttpContext.Request.Path.StartsWithSegments("/api/media"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            },
             OnChallenge = context =>
             {
                 context.HandleResponse();
@@ -155,6 +168,8 @@ builder.Services.AddSwaggerGen(o =>
         },
     });
 });
+
+builder.WebHost.UseUrls("http://0.0.0.0:5034");
 
 var app = builder.Build();
 

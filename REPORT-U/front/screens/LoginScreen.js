@@ -1,9 +1,47 @@
-import { ScrollView, View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import {
+  ScrollView,
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, shadowMd } from '../theme';
+import { useAuth } from '../src/AuthContext';
+import { ApiError } from '../src/api';
 
 // Pantalla de Login (mockup #screen-login)
-export default function LoginScreen({ navigation, onLogin }) {
+export default function LoginScreen({ navigation }) {
+  const { login } = useAuth();
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleLogin = async () => {
+    if (!identifier.trim() || !password) {
+      setError('Escribe tu email/username y contraseña.');
+      return;
+    }
+    setError('');
+    setSubmitting(true);
+    try {
+      await login(identifier.trim(), password);
+      // El cambio de sesión lo detecta App.js y muestra el feed
+    } catch (e) {
+      setError(
+        e instanceof ApiError && e.code === 'invalid_credentials'
+          ? 'Email/username o contraseña incorrectos.'
+          : `No se pudo iniciar sesión: ${e.message}`
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -15,14 +53,15 @@ export default function LoginScreen({ navigation, onLogin }) {
 
         <View style={styles.card}>
           <View style={styles.group}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>Email o username</Text>
             <TextInput
               style={styles.input}
               placeholder="tu@universidad.edu"
               placeholderTextColor={colors.gray400}
               keyboardType="email-address"
               autoCapitalize="none"
-              defaultValue="juan@uni.mx"
+              value={identifier}
+              onChangeText={setIdentifier}
             />
           </View>
 
@@ -33,12 +72,23 @@ export default function LoginScreen({ navigation, onLogin }) {
               placeholder="••••••••"
               placeholderTextColor={colors.gray400}
               secureTextEntry
-              defaultValue="123456"
+              value={password}
+              onChangeText={setPassword}
             />
           </View>
 
-          <Pressable style={styles.button} onPress={onLogin}>
-            <Text style={styles.buttonText}>Iniciar sesión</Text>
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          <Pressable
+            style={[styles.button, submitting && styles.buttonDisabled]}
+            onPress={handleLogin}
+            disabled={submitting}
+          >
+            {submitting ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              <Text style={styles.buttonText}>Iniciar sesión</Text>
+            )}
           </Pressable>
         </View>
 
@@ -105,11 +155,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     color: colors.gray900,
   },
+  error: {
+    color: colors.danger,
+    fontSize: 13,
+    marginBottom: 12,
+  },
   button: {
     backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
     color: colors.white,
