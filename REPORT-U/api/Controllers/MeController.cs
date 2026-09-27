@@ -54,7 +54,7 @@ public class MeController(ReportUDbContext db, ICurrentUserService currentUser) 
 
         return Ok(new PagedResult<PostSummaryResponse>
         {
-            Items = posts.Select(p => PostsController.ToSummary(p, supported.Contains(p.Id), bookmarked.Contains(p.Id))).ToList(),
+            Items = posts.Select(p => PostsController.ToSummary(p, supported.Contains(p.Id), bookmarked.Contains(p.Id), isOwner: true)).ToList(),
             Page = page, PageSize = pageSize, TotalCount = total,
         });
     }
@@ -103,7 +103,7 @@ public class MeController(ReportUDbContext db, ICurrentUserService currentUser) 
 
         return Ok(new PagedResult<PostSummaryResponse>
         {
-            Items = ordered.Select(p => PostsController.ToSummary(p, supported.Contains(p.Id), true)).ToList(),
+            Items = ordered.Select(p => PostsController.ToSummary(p, supported.Contains(p.Id), true, isOwner: p.AuthorId == me)).ToList(),
             Page = page, PageSize = pageSize, TotalCount = total,
         });
     }

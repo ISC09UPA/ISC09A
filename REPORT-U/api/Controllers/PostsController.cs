@@ -63,7 +63,7 @@ public class PostsController(
 
         return Ok(new PagedResult<PostSummaryResponse>
         {
-            Items = posts.Select(p => ToSummary(p, supported.Contains(p.Id), bookmarked.Contains(p.Id))).ToList(),
+            Items = posts.Select(p => ToSummary(p, supported.Contains(p.Id), bookmarked.Contains(p.Id), isOwner: p.AuthorId == me)).ToList(),
             Page = page,
             PageSize = pageSize,
             TotalCount = total,
@@ -91,7 +91,7 @@ public class PostsController(
         var supported = await db.PostSupports.AnyAsync(s => s.PostId == id && s.UserId == me);
         var bookmarked = await db.Bookmarks.AnyAsync(x => x.PostId == id && x.UserId == me);
 
-        var detail = ToSummary(post, supported, bookmarked);
+        var detail = ToSummary(post, supported, bookmarked, isOwner: post.AuthorId == me);
         return Ok(new PostDetailResponse
         {
             Id = detail.Id, Title = detail.Title, Description = post.Description,
@@ -206,7 +206,7 @@ public class PostsController(
         Extensions = { ["code"] = Middleware.ErrorCodes.ForbiddenNotOwner, ["traceId"] = HttpContext.TraceIdentifier },
     });
 
-    internal static PostSummaryResponse ToSummary(Post p, bool supportedByMe, bool bookmarkedByMe)
+    internal static PostSummaryResponse ToSummary(Post p, bool supportedByMe, bool bookmarkedByMe, bool isOwner)
     {
         var ordered = p.Images.OrderBy(i => i.CreatedAt).ToList();
         return new PostSummaryResponse
@@ -217,6 +217,7 @@ public class PostsController(
             ImageCount = ordered.Count,
             CoverImage = ordered.Count == 0 ? null : ToImage(ordered[0]),
             SupportedByMe = supportedByMe, BookmarkedByMe = bookmarkedByMe,
+            IsOwner = isOwner,
             CreatedAt = p.CreatedAt, UpdatedAt = p.UpdatedAt,
         };
     }

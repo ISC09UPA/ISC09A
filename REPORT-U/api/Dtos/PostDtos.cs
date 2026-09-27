@@ -78,6 +78,10 @@ public class PostSummaryResponse
 
     public bool SupportedByMe { get; set; }
     public bool BookmarkedByMe { get; set; }
+
+    /// <summary>True si la publicación pertenece al usuario autenticado; la app la usa para mostrar Editar/Eliminar.</summary>
+    public bool IsOwner { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

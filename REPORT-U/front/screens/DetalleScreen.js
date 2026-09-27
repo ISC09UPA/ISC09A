@@ -5,6 +5,7 @@ import {
   ScrollView,
   Pressable,
   Image,
+  Linking,
   TextInput,
   ActivityIndicator,
   Alert,
@@ -30,6 +31,7 @@ export default function DetalleScreen({ route, navigation }) {
   const [busy, setBusy] = useState(false); // apoyo/guardado en vuelo
   const [commentText, setCommentText] = useState('');
   const [sendingComment, setSendingComment] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     if (!postId) return;
@@ -109,6 +111,40 @@ export default function DetalleScreen({ route, navigation }) {
     } finally {
       setSendingComment(false);
     }
+  };
+
+  // TC-13: solo el autor ve Editar/Eliminar (el backend también lo valida).
+  const goEdit = () => navigation.navigate('Editar', { postId });
+
+  const confirmDelete = () => {
+    Alert.alert(
+      'Eliminar publicación',
+      'Se borrarán también sus imágenes y comentarios. ¿Continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await api.deletePost(postId); // el backend borra también los blobs
+              setDeleting(false);
+              Alert.alert('Eliminada', 'Tu publicación fue eliminada.');
+              // Los listados refrescan al recuperar el foco.
+              if (!navigation.canGoBack()) {
+                Linking.openSettings();
+              } else {
+                navigation.goBack();
+              }
+            } catch (e) {
+              setDeleting(false);
+              Alert.alert('No se pudo eliminar', e.message);
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (loading) {
@@ -234,6 +270,23 @@ export default function DetalleScreen({ route, navigation }) {
             <Text style={styles.pillText}>{post.bookmarkedByMe ? 'Guardado' : 'Guardar'}</Text>
           </Pressable>
         </View>
+
+        {post.isOwner ? (
+          <View style={styles.ownerActions}>
+            <Pressable style={styles.editButton} onPress={goEdit} disabled={deleting}>
+              <Ionicons name="create-outline" size={16} color={colors.gray700} />
+              <Text style={styles.editText}>Editar</Text>
+            </Pressable>
+            <Pressable style={styles.deleteButton} onPress={confirmDelete} disabled={deleting}>
+              {deleting ? (
+                <ActivityIndicator size="small" color={colors.danger} />
+              ) : (
+                <Ionicons name="trash-outline" size={16} color={colors.danger} />
+              )}
+              <Text style={styles.deleteText}>Eliminar</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         <View style={styles.comments}>
           <Text style={styles.commentsTitle}>Comentarios ({comments.length})</Text>
@@ -373,6 +426,45 @@ const styles = StyleSheet.create({
   pillBookmarkActive: {
     backgroundColor: '#fef3c7',
     borderColor: colors.queja,
+  },
+  ownerActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 24,
+  },
+  editButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: colors.gray300,
+    backgroundColor: colors.white,
+  },
+  editText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.gray700,
+  },
+  deleteButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerLight,
+  },
+  deleteText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.danger,
   },
   comments: {
     borderTopWidth: 1,

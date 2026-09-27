@@ -36,6 +36,7 @@ function InicioStackNav() {
       {/* "InicioHome" evita duplicar el nombre con la pestaña "Inicio" (warning de navegación) */}
       <InicioStack.Screen name="InicioHome" component={InicioScreen} />
       <InicioStack.Screen name="Detalle" component={DetalleScreen} />
+      <InicioStack.Screen name="Editar" component={EditarScreen} />
     </InicioStack.Navigator>
   );
 }
@@ -46,6 +47,7 @@ function GuardadosStackNav() {
       {/* "GuardadosHome" evita duplicar el nombre con la pestaña "Guardados" */}
       <GuardadosStack.Screen name="GuardadosHome" component={GuardadosScreen} />
       <GuardadosStack.Screen name="Detalle" component={DetalleScreen} />
+      <GuardadosStack.Screen name="Editar" component={EditarScreen} />
     </GuardadosStack.Navigator>
   );
 }

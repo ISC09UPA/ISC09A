@@ -152,7 +152,9 @@ export default function EditarScreen({ route, navigation }) {
           try {
             await api.deletePost(postId); // el backend borra también los blobs
             Alert.alert('Eliminada', 'Tu publicación fue eliminada.');
-            navigation.navigate('MisPublicaciones');
+            // Editar existe en los stacks Perfil, Inicio y Guardados: se regresa
+            // a la pantalla raíz del stack actual, que refresca al tomar foco.
+            navigation.popToTop();
           } catch (e) {
             Alert.alert('No se pudo eliminar', e.message);
           }
