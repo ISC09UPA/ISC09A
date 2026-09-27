@@ -17,6 +17,14 @@ export default function PostCard({ post, onPress, showAuthor = true, showComment
       </View>
 
       <Text style={styles.title}>{post.title}</Text>
+      {post.location ? (
+        <View style={styles.locationRow}>
+          <Ionicons name="location-outline" size={12} color={colors.gray500} />
+          <Text style={styles.locationText} numberOfLines={1}>
+            {post.location}
+          </Text>
+        </View>
+      ) : null}
       {excerpt ? (
         <Text style={styles.excerpt} numberOfLines={2}>
           {excerpt}
@@ -90,6 +98,17 @@ const styles = StyleSheet.create({
     color: colors.gray500,
     lineHeight: 21,
     marginBottom: 8,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 8,
+  },
+  locationText: {
+    fontSize: 12,
+    color: colors.gray500,
+    flexShrink: 1,
   },
   imagesPreview: {
     flexDirection: 'row',
