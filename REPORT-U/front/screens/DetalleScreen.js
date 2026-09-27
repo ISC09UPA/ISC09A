@@ -18,7 +18,6 @@ import AppHeader from '../components/AppHeader';
 import { TypeBadge, CategoryChip } from '../components/PostBadges';
 import { api, imageUrl } from '../src/api';
 import { mapPost, timeAgo } from '../src/format';
-import { categoryLabel } from '../src/labels';
 
 // Pantalla de Detalle (mockup #screen-detail): GET /api/posts/{id} + comentarios
 export default function DetalleScreen({ route, navigation }) {
@@ -174,7 +173,7 @@ export default function DetalleScreen({ route, navigation }) {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.meta}>
           <TypeBadge type={post.type} />
-          <CategoryChip category={categoryLabel(post.category)} />
+          <CategoryChip category={post.category} />
         </View>
 
         <Text style={styles.title}>{post.title}</Text>

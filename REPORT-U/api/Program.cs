@@ -133,6 +133,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 // ---------------------------------------------------------------------------
+// CORS para React Native Web (solo navegadores lo exigen; en nativo no aplica).
+// La API usa JWT en header sin cookies, así que permitir orígenes web en
+// desarrollo es seguro. Orígenes extra vía Web__AllowedOrigins (coma-separada).
+// ---------------------------------------------------------------------------
+var webOrigins = builder.Configuration["Web:AllowedOrigins"]
+    ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    ?? ["http://localhost:8081", "http://localhost:19006"];
+builder.Services.AddCors(o => o.AddPolicy("ReportUWeb", p => p
+    .WithOrigins(webOrigins)
+    .AllowAnyHeader()
+    .AllowAnyMethod()));
+
+// ---------------------------------------------------------------------------
 // Swagger (Swashbuckle) con documentación por endpoint (XML comments) y botón
 // "Authorize" para probar con JWT.
 // ---------------------------------------------------------------------------
@@ -182,6 +195,8 @@ app.UseSwaggerUI(o =>
     o.SwaggerEndpoint("/swagger/v1/swagger.json", "ReportU API v1");
     o.RoutePrefix = "swagger";
 });
+
+app.UseCors("ReportUWeb");
 
 app.UseAuthentication();
 app.UseAuthorization();

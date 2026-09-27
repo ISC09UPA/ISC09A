@@ -193,21 +193,26 @@ export const api = {
 };
 
 // multipart/form-data con el archivo en el campo `file` (IFormFile file).
+// Solo los tipos que acepta el backend (PostImageService.AllowedContentTypes).
 export function toFormData(uri) {
-  const ext = (uri.split('.').pop() || 'jpg').toLowerCase();
+  const clean = uri.split('?')[0];
+  const ext = (clean.split('.').pop() || '').toLowerCase();
   const typeMap = {
     jpg: 'image/jpeg',
     jpeg: 'image/jpeg',
     png: 'image/png',
     webp: 'image/webp',
     gif: 'image/gif',
-    heic: 'image/heic',
   };
+  const mime = typeMap[ext];
+  if (!mime) {
+    throw new Error(`Tipo no permitido (.${ext || '?'}). Usa jpg, png, webp o gif.`);
+  }
   const formData = new FormData();
   formData.append('file', {
     uri,
     name: `imagen.${ext === 'jpeg' ? 'jpg' : ext}`,
-    type: typeMap[ext] || 'image/jpeg',
+    type: mime,
   });
   return formData;
 }
