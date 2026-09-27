@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "EasyMemories",
+    "slug": "easymemories",
+    "scheme": "easymemories",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "EasyMemories necesita la cámara para escanear el código QR del evento."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "EasyMemories necesita acceso a tus fotos para subir recuerdos del evento.",
+          "cameraPermission": "EasyMemories necesita la cámara para tomar fotos del evento."
+        }
+      ]
+    ]
+  }
+}
