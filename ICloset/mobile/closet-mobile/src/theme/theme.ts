@@ -1,24 +1,11 @@
-// Paleta de colores de la app. Cualquier pantalla o componente nuevo debe
-// tomar sus colores de aqui, no escribir colores sueltos (#hex) directo
-// en los estilos de cada componente.
-
 export const colors = {
-  background: '#E8EDEF',
+  wall: '#F4F4F4',
   card: '#FFFFFF',
-
-  textPrimary: '#16232B',
-  textSecondary: '#6B7B84',
-
-  buttonPrimaryBg: '#16232B',
-  buttonPrimaryText: '#FFFFFF',
-  buttonDangerBg: '#B3402F',
-
-  outfitBarBg: '#16232B',
-  outfitBarText: '#FFFFFF',
-  outfitBarTextMuted: '#B9C6CC',
-
-  rail: '#B58B3C',
-  border: '#CBD5DA',
+  ink: '#111111',
+  muted: '#8A8A8A',
+  rail: '#111111',
+  line: '#E0E0E0',
+  danger: '#B3402F',
 };
 
 export const spacing = { xs: 4, sm: 8, md: 16, lg: 24 };
