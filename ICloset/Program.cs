@@ -166,7 +166,6 @@ app.MapDelete("/api/garments/{id:int}", async (
     return Results.NoContent();
 });
 
-// Controllers que ya tenía el proyecto del profesor
 app.MapControllers();
 
 app.Run();
