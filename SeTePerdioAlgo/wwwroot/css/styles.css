@@ -1,0 +1,116 @@
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+body { background: #f0f2f5; color: #1c1e21; }
+
+.app-header {
+  background: #1877f2;
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+.app-header h1 { font-size: 1.8rem; }
+.subtitle { opacity: 0.9; margin-bottom: 15px; }
+
+.header-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+.header-actions input {
+  padding: 10px 14px;
+  border-radius: 20px;
+  border: none;
+  width: 320px;
+  max-width: 80vw;
+}
+.btn-primary {
+  background: #ffffff;
+  color: #1877f2;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.btn-primary:hover { background: #e7f0ff; }
+
+.tabs { display: flex; justify-content: center; gap: 8px; }
+.tab {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 16px;
+  cursor: pointer;
+}
+.tab.activo { background: white; color: #1877f2; font-weight: bold; }
+
+main { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.card:hover { transform: translateY(-3px); }
+
+.card-imagen { position: relative; height: 160px; background: #e4e6eb; }
+.card-imagen img { width: 100%; height: 100%; object-fit: cover; }
+.sin-foto { display:flex; align-items:center; justify-content:center; height:100%; color:#65676b; font-size:0.85rem; }
+
+.badge {
+  position: absolute; top: 8px; left: 8px;
+  padding: 4px 10px; border-radius: 12px;
+  font-size: 0.75rem; font-weight: bold; color: white;
+}
+.badge-perdido { background: #e74c3c; }
+.badge-encontrado { background: #2ecc71; }
+.badge-resuelto { left: auto; right: 8px; background: #95a5a6; }
+
+.card-info { padding: 10px 12px; }
+.card-info h3 { font-size: 1rem; margin-bottom: 4px; }
+.card-ubicacion, .card-fecha { font-size: 0.8rem; color: #65676b; }
+
+.vacio { text-align: center; margin-top: 40px; color: #65676b; }
+.oculto { display: none !important; }
+
+.modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; z-index: 100;
+}
+.modal-contenido {
+  background: white; border-radius: 10px; padding: 24px;
+  max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto;
+  position: relative;
+}
+.cerrar {
+  position: absolute; top: 12px; right: 16px;
+  background: none; border: none; font-size: 1.5rem; cursor: pointer;
+}
+
+form label { display: block; margin-bottom: 12px; font-size: 0.9rem; font-weight: 600; }
+form input, form select, form textarea {
+  width: 100%; margin-top: 4px; padding: 8px 10px;
+  border: 1px solid #ccd0d5; border-radius: 6px; font-size: 0.9rem;
+}
+
+.preview-fotos { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.preview-fotos img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
+
+.detalle-fotos { display: flex; gap: 8px; overflow-x: auto; margin: 12px 0; }
+.detalle-fotos img { width: 140px; height: 140px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+
+.detalle-acciones { display: flex; gap: 10px; margin-top: 16px; }
+.btn-secundario { background: #1877f2; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; }
+.btn-peligro { background: #e74c3c; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; }
