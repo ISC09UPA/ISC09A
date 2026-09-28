@@ -10,10 +10,26 @@ expo-env.d.ts
 .metro-health-check*
 *.tsbuildinfo
 
-# .NET (aplica a builds nuevos; los ya trackeados no se tocan)
+# Archivos locales de entorno
+.env
+.env.*
+!.env.example
+.env*.local
+
+# .NET
 bin/
 obj/
 *.user
+
+# Bases de datos SQLite locales
+**/*.db
+**/*.db-shm
+**/*.db-wal
+
+# Archivos de depuración de npm/yarn
+npm-debug.*
+yarn-debug.*
+yarn-error.*
 
 # macOS
 .DS_Store
