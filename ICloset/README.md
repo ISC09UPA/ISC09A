@@ -74,6 +74,14 @@ Reemplaza el texto de ejemplo por la cadena de conexión de Azure. No la agregue
 
 La configuración de SQLite está en `appsettings.json`. No compartas el archivo `closet.db` como sustituto de Azure Blob: contiene datos locales de desarrollo.
 
+## Crear un archivo .env antes de ejecutar la app
+
+Dentro del env pondras lo siguiente
+
+ ```bash
+EXPO_PUBLIC_USE_RN_FETCH=1
+```
+
 ## Ejecutar la app móvil
 
 Desde la carpeta del proyecto Expo:
