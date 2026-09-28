@@ -5,8 +5,14 @@ using Closet.Api.Data;
 using Closet.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
+using Closet.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 // Controllers existentes
 builder.Services.AddControllers();
@@ -98,29 +104,22 @@ app.MapPost("/api/garments", async (
     if (photo is null || photo.Length == 0 || photo.Length > 5 * 1024 * 1024)
         return Results.BadRequest("La foto debe pesar entre 1 byte y 5 MB.");
 
-    var extension = photo.ContentType switch
-    {
-        "image/jpeg" => ".jpg",
-        "image/png" => ".png",
-        "image/webp" => ".webp",
-        _ => null
-    };
+        await using var headerStream = photo.OpenReadStream();
+        var detected = await ImageSignature.DetectAsync(headerStream);
 
-    if (extension is null)
-        return Results.BadRequest("Solo se permiten imágenes JPG, PNG o WEBP.");
+        if (detected is null)
+            return Results.BadRequest("Solo se permiten imágenes JPG, PNG o WEBP reales.");
 
-    var fileName = $"{Guid.NewGuid()}{extension}";
-    var blob = container.GetBlobClient(fileName);
+        var fileName = $"{Guid.NewGuid()}{detected.Value.Extension}";
+        var blob = container.GetBlobClient(fileName);
 
-    await blob.UploadAsync(
-        photo.OpenReadStream(),
-        new BlobUploadOptions
-        {
-            HttpHeaders = new BlobHttpHeaders
+        await using var uploadStream = photo.OpenReadStream();
+        await blob.UploadAsync(
+            uploadStream,
+            new BlobUploadOptions
             {
-                ContentType = photo.ContentType
-            }
-        });
+                HttpHeaders = new BlobHttpHeaders { ContentType = detected.Value.ContentType }
+            });
 
     var garment = new Garment
     {
