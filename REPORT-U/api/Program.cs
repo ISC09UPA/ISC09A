@@ -17,6 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 // reales del entorno (podman/docker secrets, App Service, etc.).
 // ---------------------------------------------------------------------------
 LoadDotEnv(builder.Environment.ContentRootPath);
+builder.Configuration.AddEnvironmentVariables();
 
 // ---------------------------------------------------------------------------
 // Configuración (toda por variables de entorno, ver .env.example):
