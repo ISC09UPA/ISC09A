@@ -13,7 +13,7 @@ Documento de coordinación. Por ahora cubre el **Día 1**.
 | Persona | Tarea del Día 1 | Estado |
 |---|---|---|
 | P1 | Instalar .NET y dejar el proyecto corriendo | — |
-| P2 | Agregar SQLite y crear la tabla de prendas | — |
+| P2 | Agregar SQLite y crear la tabla de prendas | hecho |
 | P3 | Crear el proyecto de React Native (scaffold Expo) | pendiente |
 | P4 | Definir colores y estilos (tema) | en curso |
 | P5 | Crear repo y lista de tareas (tablero) | — |
