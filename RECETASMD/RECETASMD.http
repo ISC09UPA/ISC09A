@@ -1,6 +1,21 @@
-@RECETASMD_HostAddress = http://localhost:5276
+@RECETASMD_HostAddress = http://localhost:5000
 
-GET {{RECETASMD_HostAddress}}/weatherforecast/
+GET {{RECETASMD_HostAddress}}/api/recipes
 Accept: application/json
+
+###
+
+GET {{RECETASMD_HostAddress}}/api/recipes/1
+Accept: application/json
+
+###
+
+POST {{RECETASMD_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "ana@correo.com",
+  "password": "password123"
+}
 
 ###
