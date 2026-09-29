@@ -4,7 +4,7 @@
 
 ReportU es una aplicación móvil para que estudiantes publiquen incidencias, quejas y temas de discusión de su comunidad universitaria. El MVP incluye registro e inicio de sesión, feed, detalle de publicaciones, imágenes, comentarios, apoyos, guardados y edición/eliminación por el autor. No incluye moderación, cuentas administrativas, notificaciones push ni recuperación de contraseña.
 
-Este documento describe el código disponible en `api/` y `front/` y la matriz `docs/qa/mvp-test-cases.md`. La matriz enumera 15 casos, pero ninguno está marcado como ejecutado; por ello, el estado de QA que se reporta aquí es **pendiente**, no aprobado ni fallido.
+Este documento describe el código disponible en `REPORT-U/` (backend; el frontend vive en la rama `report-u/mobil`, ruta `REPORT-U/front/`) y la matriz `docs/qa/mvp-test-cases.md`. La matriz enumera 15 casos, pero ninguno está marcado como ejecutado; por ello, el estado de QA que se reporta aquí es **pendiente**, no aprobado ni fallido.
 
 ## 2. Arquitectura
 
@@ -35,10 +35,10 @@ flowchart LR
 
 ### Configuración y ejecución local
 
-1. Copiar `api/.env.example` a `api/.env` y configurar la conexión PostgreSQL, una clave JWT de al menos 32 caracteres y, para probar Azure real, la cadena de conexión y el contenedor. No versionar el `.env` ni usar la clave de desarrollo en producción.
-2. Desde `api/`, ejecutar `podman compose up -d` para PostgreSQL.
+1. Copiar `.env.example` a `.env` y configurar la conexión PostgreSQL, una clave JWT de al menos 32 caracteres y, para probar Azure real, la cadena de conexión y el contenedor. No versionar el `.env` ni usar la clave de desarrollo en producción.
+2. Desde `REPORT-U/`, ejecutar `podman compose up -d` para PostgreSQL.
 3. Aplicar migraciones con `dotnet ef database update` (requiere `dotnet-ef` 10) y arrancar con `dotnet run`. La API queda disponible en el puerto 5034 y Swagger en `http://localhost:5034/swagger`.
-4. Desde `front/`, instalar dependencias con `npm install`, definir `EXPO_PUBLIC_API_URL` en `front/.env` para el dispositivo elegido y arrancar con `npm start`. Usar `http://localhost:5034` en simulador iOS, `http://10.0.2.2:5034` en emulador Android o la IP LAN del equipo para un teléfono físico. Reiniciar Expo tras cambiar la variable.
+4. El frontend vive en la rama `report-u/mobil` (`REPORT-U/front/`): instalar dependencias con `npm install`, definir `EXPO_PUBLIC_API_URL` en `front/.env` para el dispositivo elegido y arrancar con `npm start`. Usar `http://localhost:5034` en simulador iOS, `http://10.0.2.2:5034` en emulador Android o la IP LAN del equipo para un teléfono físico. Reiniciar Expo tras cambiar la variable.
 
 ## 3. Contrato HTTP principal
 

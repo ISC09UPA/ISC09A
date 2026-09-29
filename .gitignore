@@ -9,6 +9,7 @@ publish/
 .env.*
 !.env.example
 node_modules/
+uploads/
 .expo/
 dist/
 web-build/
