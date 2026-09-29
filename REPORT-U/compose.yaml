@@ -1,0 +1,26 @@
+# ReportU — base de datos local con Podman.
+# Uso:  podman compose up -d   (levanta Postgres)
+#       podman compose down    (apaga, conserva datos en el volumen pgdata)
+
+services:
+  postgres:
+    image: docker.io/library/postgres:18-alpine
+    container_name: reportu_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-reportu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-reportu_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-reportu}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-reportu} -d ${POSTGRES_DB:-reportu}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

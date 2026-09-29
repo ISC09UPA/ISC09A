@@ -1,1 +1,17 @@
 .vs
+.vscode/
+bin/
+obj/
+out/
+publish/
+*.user
+.env
+.env.*
+!.env.example
+node_modules/
+uploads/
+.expo/
+dist/
+web-build/
+.DS_Store
+*.log
